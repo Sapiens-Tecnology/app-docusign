@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Signing</title>
+    <script src="https://js-d.docusign.com/bundle.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      html, body {
+        padding: 0;
+        margin: 0;
+        font: 13px Helvetica, Arial, sans-serif;
+      }
+      #docusignContainer {
+        height: 100vh;
+        width: 100vw;
+      }
+      /* container styles */
+      .hide {display: none;}
+    </style>
+    <script type="module">
+      (async () => {
+        let signingUrl = "https://demo.docusign.net/Signing/MTRedeem/v1/58b04408-8559-46be-9cc6-27f9d0359079?slt=eyJ0eXAiOiJNVCIsImFsZyI6IlJTMjU2Iiwia2lkIjoiNjgxODVmZjEtNGU1MS00Y2U5LWFmMWMtNjg5ODEyMjAzMzE3In0.AQYAAAABAAMABwCA3GLWZFbdSAgAgHx0XYZW3UgYAAEAAAAAAAAAIQDsAgAAeyJUb2tlbklkIjoiYzMyZjkwZDAtOGYyMy00MzZhLWFlNTctN2Q1MDgxZGRkZjAxIiwiRXhwaXJhdGlvbiI6IjIwMjUtMDItMjZUMTM6MDA6MjUrMDA6MDAiLCJJc3N1ZWRBdCI6IjIwMjUtMDItMjZUMTI6NTU6MjUuMzk1NDU5NSswMDowMCIsIlJlc291cmNlSWQiOiJjZmQ4MGJiNC02YzlkLTRlODEtODkzMC01OGJlNWM3NzA5ZDQiLCJSZXNvdXJjZXMiOiJ7XCJFbnZlbG9wZUlkXCI6XCJjZmQ4MGJiNC02YzlkLTRlODEtODkzMC01OGJlNWM3NzA5ZDRcIixcIkFjdG9yVXNlcklkXCI6XCJkMmFkNTdiOC01Yzc1LTQxYmYtYWI4MS1hODEyNTVhMmIyYzBcIixcIlJlY2lwaWVudElkXCI6XCIzZjU2M2E0ZC1iMTQ1LTRhOTMtYWEwOS1iYjQ5ZWJlMDNmZTBcIixcIkZha2VRdWVyeVN0cmluZ1wiOlwidD0xZjI2MTg5MC0zNzBjLTQ2YjctODliZC0wMDcyMjgwNzI4OTdcIixcIkludGVncmF0b3JLZXlcIjpcImY0ZDI5NzlkLThmOTMtNDA0ZS05OTdiLTI0MWM3ZWQxN2Q4NlwiLFwiQ3JlYXRlZEF0XCI6XCIyMDI1LTAyLTI2VDEyOjU1OjI1LjM3NzAzNzNaXCJ9IiwiVG9rZW5UeXBlIjoxLCJBdWRpZW5jZSI6IjI1ZTA5Mzk4LTAzNDQtNDkwYy04ZTUzLTNhYjJjYTU2MjdiZiIsIlJlZGlyZWN0VXJpIjoiaHR0cHM6Ly9kZW1vLmRvY3VzaWduLm5ldC9TaWduaW5nL1N0YXJ0SW5TZXNzaW9uLmFzcHgiLCJIYXNoQWxnb3JpdGhtIjowLCJIYXNoUm91bmRzIjowLCJUb2tlblN0YXR1cyI6MCwiSXNTaW5nbGVVc2UiOmZhbHNlfT8AAKSaiGVW3Ug.dsFBZCWqMoe48PDTwYfpsbM_t_Pc3BwQmjd5_YCjgUTeSmFmo7zgtsQqFTzJKiRRfHhOiThR3muQZsDmjR6AyekHTUQnXPNo9CtKI38m1Etd1ZNtTmILub9Y-NbtnqDDJhrxfrjE_PcgpndxNGOAtQ5F_IAPAcHRctCT1b3vOQFUshopL9eewfPiXmacWCKWidg_4usI01pjH9uwnQ1bRwZbhxnRMNcbmUVmD0paiDMUDeOzms_9y66AhTMZX8ZFhnG0OMwJ-w0MfjBrlyIqxmx0jTEDfEyUS5J8wYVjqZBVHYJkBJTZ6EECIBuBzG5Ft97JcjCEefPBg0vWQRcIVQ&locale=pt_BR"; // Substitua pelo URL real
+        let clientId = "f4d2979d-8f93-404e-997b-241c7ed17d86"; // Substitua pelo ID real
+
+        const signingConfiguration = {
+          url: signingUrl,
+          displayFormat: 'focused',
+          style: {
+            branding: {
+              primaryButton: {
+                backgroundColor: '#FFC600',
+                color: 'black'
+              }
+            },
+            signingNavigationButton: {
+              finishText: 'Assinar',
+              position: 'bottom-center'
+            }
+          }
+        };
+
+        try {
+          const docusign = await window.DocuSign.loadDocuSign(clientId);
+          const signing = docusign.signing(signingConfiguration);
+
+          /** Event handlers **/
+          signing.on('ready', (event) => {
+            console.log('UI is rendered');
+          });
+          signing.on('sessionEnd', (event) => {
+            console.log('sessionEnd', event);
+          });
+
+          // Open the signing ceremony
+          $(`#main`).addClass("hide"); // JQuery to hide content
+          $(`#signing-ceremony`).removeClass("hide"); // Display the container
+          signing.mount(`#docusignContainer`);
+        } catch (error) {
+          // Any configuration or API limits will be caught here
+          console.log("### Error calling docusign.js");
+          console.log(error);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="main">
+      <!-- Conteúdo principal -->
+    </div>
+    <div id="signing-ceremony" class="hide">
+      <div class="docusign-agreement-container" id="docusignContainer"></div>
+    </div>
+  </body>
+</html>
