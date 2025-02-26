@@ -64,6 +64,8 @@ app.post('/d', async (req, res) => {
 
   try {
     results = await sendEnvelope(args);
+    res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
     res.json(results);
   } catch (error) {
     console.log(error);
@@ -103,6 +105,8 @@ app.post('/d/html', async (req, res) => {
     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     res.set({'Content-Type': 'text/html'});
+    res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
     res.send(htmlContent);
   } catch (error) {
     console.log(error);
