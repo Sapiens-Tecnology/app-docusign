@@ -72,6 +72,46 @@ app.post('/d', async (req, res) => {
 
 });
 
+app.post('/d/html', async (req, res) => {
+
+  const isTokenOK = req.dsAuth.checkToken(3);
+  if (!isTokenOK) {
+      req.user = await req.dsAuth.getToken();
+  }
+
+  const envelopeArgs = {
+    signerEmail: req.body.signerEmail,
+    signerName: req.body.signerName,
+    signerClientId: req.body.clientUserId,
+    dsReturnUrl: dsReturnUrl,
+    docFile: path.resolve(demoDocsPath, pdf1File),
+  };
+
+  const args = {
+    accessToken: req.user.accessToken,
+    basePath: basePath,
+    accountId: ACCOUNT_ID,
+    envelopeArgs: envelopeArgs,
+  };
+
+  let results = null;
+
+  try {
+    results = await sendEnvelope(args);
+    const docusignUrl = results.redirectUrl;
+    const htmlFilePath = path.resolve(__dirname, './', 'index.html');
+    let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+    htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
+    res.set({'Content-Type': 'text/html'});
+    res.send(htmlContent);
+  } catch (error) {
+    console.log(error);
+    res.status(error.response?.status || 500).json({ error: error.message, details: error.response?.data });
+  }
+
+});
+
+
 app.get('/d/:clientUserId', async (req, res) => {
   try {
     const isTokenOK = req.dsAuth.checkToken(3);

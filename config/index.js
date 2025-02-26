@@ -1,8 +1,10 @@
 const settings = {};
 
-const dsOauthServer = process.env.production
-  ? 'https://account.docusign.com'
-  : 'https://account-d.docusign.com';
+// const dsOauthServer = process.env.production
+//   ? 'https://account.docusign.com'
+//   : 'https://account-d.docusign.com';
+
+const dsOauthServer = 'https://account-d.docusign.com';
 
 settings.dsClientSecret = process.env.DS_CLIENT_SECRET;
 settings.dsClientId = process.env.DS_CLIENT_ID;
