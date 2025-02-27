@@ -244,11 +244,11 @@ function makeEnvelope(args) {
   doc1.documentBase64 = doc1b64;
   doc1.name = 'Terms of Adhesion';
   doc1.fileExtension = 'pdf';
-  doc1.documentId = 'adhesion';
+  doc1.documentId = '1';
   doc2.documentBase64 = doc2b64;
   doc2.name = 'Privacy Policy';
   doc2.fileExtension = 'pdf';
-  doc2.documentId = 'privacy';
+  doc2.documentId = '2';
   env.documents = [doc1, doc2];
   env.useDisclosure = true;
   env.status = 'sent';
