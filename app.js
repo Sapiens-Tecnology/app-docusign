@@ -13,6 +13,7 @@ const api = 'eSignature';
 const signerClientId = 1000; // The id of the signer within this application.
 const demoDocsPath = path.resolve(__dirname, './demo_documents');
 const pdf1File = 'MINUTA ITAQUERA II.pdf';
+const pdf2File = 'privacy.pdf';
 const dsReturnUrl = dsConfig.appUrl + '/ds-return';
 const dsPingUrl = dsConfig.appUrl + '/'; // Url that will be pinged by the DocuSign signing via Ajax
 
@@ -51,6 +52,7 @@ app.post('/d', async (req, res) => {
     signerClientId: req.body.clientUserId,
     dsReturnUrl: dsReturnUrl,
     docFile: path.resolve(demoDocsPath, pdf1File),
+    docFile2: path.resolve(demoDocsPath, pdf2File),
   };
 
   const args = {
@@ -87,6 +89,7 @@ app.post('/d/html', async (req, res) => {
     signerClientId: req.body.clientUserId,
     dsReturnUrl: dsReturnUrl,
     docFile: path.resolve(demoDocsPath, pdf1File),
+    docFile2: path.resolve(demoDocsPath, pdf2File),
   };
 
   const args = {
@@ -143,9 +146,8 @@ app.get('/d/:clientUserId', async (req, res) => {
       );
 
       if (matchingEnvelope) {
-        const { status, envelopeId, envelopeDocuments } = matchingEnvelope;
-        const documentId = envelopeDocuments[0].documentId;
-        return res.json({ status, envelopeId, documentId });
+        const { status, envelopeId } = matchingEnvelope;
+        return res.json({ status, envelopeId });
       }
     }
     return res.status(404).json({ message: 'Nenhum envelope foi encontrado.' });
@@ -235,12 +237,19 @@ function makeEnvelope(args) {
   let env = new docusign.EnvelopeDefinition();
   env.emailSubject = 'Please sign this document';
   let doc1 = new docusign.Document();
+  let doc2 = new docusign.Document();
   let doc1b64 = Buffer.from(docPdfBytes).toString('base64');
+  docPdfBytes = fs.readFileSync(args.docFile2);
+  let doc2b64 = Buffer.from(docPdfBytes).toString('base64');
   doc1.documentBase64 = doc1b64;
-  doc1.name = 'Lorem Ipsum';
+  doc1.name = 'Terms of Adhesion';
   doc1.fileExtension = 'pdf';
-  doc1.documentId = '3';
-  env.documents = [doc1];
+  doc1.documentId = 'adhesion';
+  doc2.documentBase64 = doc2b64;
+  doc2.name = 'Privacy Policy';
+  doc2.fileExtension = 'pdf';
+  doc2.documentId = 'privacy';
+  env.documents = [doc1, doc2];
   env.useDisclosure = true;
   env.status = 'sent';
   let signer1 = docusign.Signer.constructFromObject({
