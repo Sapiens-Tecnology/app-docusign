@@ -176,12 +176,19 @@ app.get('/d/envelope/:envelopeId/document/:documentId', async (req, res) => {
 
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     const results = await envelopesApi.getDocument(ACCOUNT_ID, envelopeId, documentId);
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': 'inline; filename="document.pdf"',
-      'Content-Length': results.length
-  });
-    res.send(results);
+
+    const base64Data = Buffer.from(results).toString('base64');
+    const pdfDataUri = `data:application/pdf;base64,${base64Data}`;
+    const htmlFilePath = path.resolve(__dirname, './', 'teste1.html');
+    let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+    htmlContent = htmlContent.replace('{{PDF_URL}}', pdfDataUri); 
+    res.set({'Content-Type': 'text/html'});
+     //   res.set({
+  //     'Content-Type': 'application/pdf',
+  //     'Content-Disposition': 'inline; filename="document.pdf"',
+  //     'Content-Length': results.length
+  // });
+    res.send(htmlContent);
     // return res.status(404).json({ message: 'Nenhum envelope foi encontrado.' });
   } catch (error) {
     console.error(error);
