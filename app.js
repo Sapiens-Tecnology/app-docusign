@@ -184,7 +184,7 @@ app.get('/d/:email', async (req, res) => {
         return res.json({ status, envelopeId });
       }
     }
-    return res.status(404).json({ message: 'Nenhum envelope foi encontrado.' });
+    return res.status(200).json({ status: 'unsend'  });
   } catch (error) {
     console.error(error);
     res.status(error.response?.status || 500).json({
