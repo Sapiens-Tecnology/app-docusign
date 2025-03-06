@@ -18,6 +18,7 @@ const dsReturnUrl = dsConfig.appUrl + '/ds-return';
 const dsPingUrl = dsConfig.appUrl + '/'; // Url that will be pinged by the DocuSign signing via Ajax
 
 const app = express();
+const TEMPLATE_ID = "e248974c-9c15-42b8-9c83-8157e16b34ba";
 const PORT = process.env.PORT || 8080;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
 const CLICKWRAP_ID = process.env.CLICKWRAP_ID;
@@ -54,16 +55,33 @@ app.post('/d', async (req, res) => {
     docFile: path.resolve(demoDocsPath, pdf1File),
     docFile2: path.resolve(demoDocsPath, pdf2File),
   };
+  const templateData = {
+    fullName: req.body.signerName,        
+    nationality: req.body.nationality,
+    civilState: req.body.civilState,
+    rg: req.body.rg,
+    cpf: req.body.cpf,
+    birthDate: req.body.birthDate,
+    email: req.body.signerEmail,              
+    cellphone: req.body.cellphone,      
+    street: req.body.street,            
+    houseNumber: req.body.houseNumber,
+    neighborhood: req.body.neighborhood,
+    city: req.body.city,               
+    state: req.body.state,            
+    zipCode: req.body.zipCode,          
+  };
+  
 
   const args = {
     accessToken: req.user.accessToken,
     basePath: basePath,
     accountId: ACCOUNT_ID,
     envelopeArgs: envelopeArgs,
+    templateData,
   };
 
   let results = null;
-
   try {
     results = await sendEnvelope(args);
     res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
@@ -91,14 +109,31 @@ app.post('/d/html', async (req, res) => {
     docFile: path.resolve(demoDocsPath, pdf1File),
     docFile2: path.resolve(demoDocsPath, pdf2File),
   };
+  const templateData = {
+    fullName: req.body.signerName,        
+    nationality: req.body.nationality,
+    civilState: req.body.civilState,
+    rg: req.body.rg,
+    cpf: req.body.cpf,
+    birthDate: req.body.birthDate,
+    email: req.body.signerEmail,              
+    cellphone: req.body.cellphone,      
+    street: req.body.street,            
+    houseNumber: req.body.houseNumber,
+    neighborhood: req.body.neighborhood,
+    city: req.body.city,               
+    state: req.body.state,            
+    zipCode: req.body.zipCode,          
+  };
+  
 
   const args = {
     accessToken: req.user.accessToken,
     basePath: basePath,
     accountId: ACCOUNT_ID,
     envelopeArgs: envelopeArgs,
+    templateData,
   };
-
   let results = null;
 
   try {
@@ -119,30 +154,29 @@ app.post('/d/html', async (req, res) => {
 });
 
 
-app.get('/d/:clientUserId', async (req, res) => {
+app.get('/d/:email', async (req, res) => {
   try {
     const isTokenOK = req.dsAuth.checkToken(3);
     if (!isTokenOK) {
       req.user = await req.dsAuth.getToken();
       console.log(req.user.accessToken)
     }
-    const { clientUserId } = req.params;
-    if (!clientUserId) {
-      return res.status(400).json({ error: 'O parâmetro clientUserId é obrigatório.' });
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ error: 'O email precisa ser informado.' });
     }
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + req.user.accessToken);
 
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
-    const options = {...req.query, include: 'documents, recipients', fromDate: '2025-01-01T01:44Z'}; 
+    const options = {...req.query, include: 'recipients', fromDate: '2025-01-01T01:44Z'}; 
     const results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
-
     if (results.envelopes && results.envelopes.length > 0) {
       const matchingEnvelope = results.envelopes.find(
         (envelope) =>
-          envelope.recipients?.signers &&
-          envelope.recipients.signers[0]?.recipientId === clientUserId
+          envelope.recipients?.certifiedDeliveries &&
+          envelope.recipients.certifiedDeliveries[0]?.email === email
       );
 
       if (matchingEnvelope) {
@@ -184,8 +218,8 @@ app.get('/d/envelope/:envelopeId/document/:documentId', async (req, res) => {
     const htmlFilePath = path.resolve(__dirname, './', 'teste1.html');
     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
     htmlContent = htmlContent.replace('{{PDF_URL}}', pdfDataUri); 
-    res.set({'Content-Type': 'text/html'});
-     //   res.set({
+  //   res.set({'Content-Type': 'text/html'});
+  //      res.set({
   //     'Content-Type': 'application/pdf',
   //     'Content-Disposition': 'inline; filename="document.pdf"',
   //     'Content-Length': results.length
@@ -204,7 +238,6 @@ app.get('/d/envelope/:envelopeId/document/:documentId', async (req, res) => {
 
 
 const sendEnvelope = async (args) => {
-  console.log(args);
 
   let dsApiClient = new docusign.ApiClient();
   dsApiClient.setBasePath(args.basePath);
@@ -212,7 +245,7 @@ const sendEnvelope = async (args) => {
   let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
   let results = null;
 
-  let envelope = makeEnvelope(args.envelopeArgs);
+  let envelope = makeEnvelope(args.envelopeArgs, args.templateData);
 ///restapi/v2.1/accounts/{accountId}/envelopes
   results = await envelopesApi.createEnvelope(args.accountId, {
     envelopeDefinition: envelope,
@@ -220,49 +253,88 @@ const sendEnvelope = async (args) => {
 
   let envelopeId = results.envelopeId;
   console.log(`Envelope was created. EnvelopeId ${envelopeId}`);
+  const doc = await envelopesApi.getEnvelopeDocGenFormFields(args.accountId, envelopeId);
+  const docFields = makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
+  let url =  `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/docGenFormFields`
+  const headers = {
+    "Authorization": `Bearer ${args.accessToken}`,
+    "Content-Type": "application/json",
+  };
+  let body = {
+    "docGenFormFields": [
+      {
+        "docGenFormFieldList": docFields,
+        "documentId": doc.docGenFormFields[0].documentId
+      }
+    ]
+  }
+  await axios.put(url, body, { headers });
+
+  url = `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
+  body = {
+    documentBase64: fs.readFileSync(args.envelopeArgs.docFile2).toString('base64'),
+    documentId: "2",
+    fileExtension: "pdf",
+    name: "Privacy Policy",
+    order: 2
+  }
+
+  await axios.put(url, body, { headers });
 
   let viewRequest = makeRecipientViewRequest(args.envelopeArgs);
   ///restapi/v2.1/accounts/64b03dd2-202a-4066-a9a0-056dc0ac5776/envelopes/912cd1de-b099-4858-b7aa-2d44f6193875/views/recipient'
   results = await envelopesApi.createRecipientView(args.accountId, envelopeId, {
     recipientViewRequest: viewRequest,
   });
-console.log(results)
   return { envelopeId: envelopeId, redirectUrl: results.url + '&locale=pt_BR' };
 };
 
+function makeDocFields(docFields, templateData) {
+  const labelToBodyField = {
+    "Full Name": "fullName",
+    "Nationality": "nationality",
+    "Civil State": "civilState",
+    "RG": "rg",
+    "CPF": "cpf",
+    "Birth Date": "birthDate",
+    "Email": "email",
+    "Cellphone": "cellphone",
+    "Street": "street",
+    "House Number": "houseNumber",
+    "Neighborhood": "neighborhood",
+    "City": "city",
+    "State": "state",
+    "Zip Code": "zipCode"
+  };
+
+  return docFields.map(field => {
+      const bodyField = labelToBodyField[field.label];
+      if (bodyField && templateData[bodyField] !== undefined) {
+          return {
+              ...field,
+              value: templateData[bodyField]
+          };
+      }
+      return field;
+  });
+}
+
+
 
 function makeEnvelope(args) {
-  let docPdfBytes;
-  docPdfBytes = fs.readFileSync(args.docFile);
   let env = new docusign.EnvelopeDefinition();
+  env.templateId = TEMPLATE_ID;
+  
+  const role = new docusign.TemplateRole();
+  role.email = args.signerEmail;
+  role.name = args.signerName;
+  role.roleName = 'Client';
+  role.clientUserId = args.signerClientId;
+
+  env.templateRoles = [role];
   env.emailSubject = 'Please sign this document';
-  let doc1 = new docusign.Document();
-  let doc2 = new docusign.Document();
-  let doc1b64 = Buffer.from(docPdfBytes).toString('base64');
-  docPdfBytes = fs.readFileSync(args.docFile2);
-  let doc2b64 = Buffer.from(docPdfBytes).toString('base64');
-  doc1.documentBase64 = doc1b64;
-  doc1.name = 'Terms of Adhesion';
-  doc1.fileExtension = 'pdf';
-  doc1.documentId = '1';
-  doc2.documentBase64 = doc2b64;
-  doc2.name = 'Privacy Policy';
-  doc2.fileExtension = 'pdf';
-  doc2.documentId = '2';
-  env.documents = [doc1, doc2];
   env.useDisclosure = true;
   env.status = 'sent';
-  let signer1 = docusign.Signer.constructFromObject({
-    email: args.signerEmail,
-    name: args.signerName,
-    clientUserId: args.signerClientId,
-    recipientId: args.signerClientId,
-  });
-
-  let recipients = docusign.Recipients.constructFromObject({
-    signers: [signer1],
-  });
-  env.recipients = recipients;
 
   return env;
 }
