@@ -69,7 +69,20 @@ app.post('/d', async (req, res) => {
     neighborhood: req.body.neighborhood,
     city: req.body.city,               
     state: req.body.state,            
-    zipCode: req.body.zipCode,          
+    zipCode: req.body.zipCode,
+    enterpriseName: req.body.enterpriseName,
+    enterpriseAddress: req.body.enterpriseAddress,
+    enterpriseNumber: req.body.enterpriseNumber,
+    enterpriseNeighborhood: req.body.enterpriseNeighborhood,
+    enterpriseCity: req.body.enterpriseCity,
+    enterpriseMeter: req.body.enterpriseMeter,
+    enterpriseUnits: req.body.enterpriseUnits,
+    contractValue: req.body.contractValue,
+    enterpriseDocument: req.body.enterpriseDocument,
+    bonusRate: req.body.bonusRate,
+    bonusParcels: req.body.bonusParcels,
+    bonusValue: req.body.bonusValue,
+    userBank: req.body.userBank,       
   };
   
 
@@ -111,7 +124,6 @@ app.post('/d/html', async (req, res) => {
   };
   const templateData = {
     fullName: req.body.signerName,        
-    nationality: req.body.nationality,
     civilState: req.body.civilState,
     rg: req.body.rg,
     cpf: req.body.cpf,
@@ -123,7 +135,20 @@ app.post('/d/html', async (req, res) => {
     neighborhood: req.body.neighborhood,
     city: req.body.city,               
     state: req.body.state,            
-    zipCode: req.body.zipCode,          
+    zipCode: req.body.zipCode,      
+    enterpriseName: req.body.enterpriseName,
+    enterpriseAddress: req.body.enterpriseAddress,
+    enterpriseNumber: req.body.enterpriseNumber,
+    enterpriseNeighborhood: req.body.enterpriseNeighborhood,
+    enterpriseCity: req.body.enterpriseCity,
+    enterpriseMeter: req.body.enterpriseMeter,
+    enterpriseUnits: req.body.enterpriseUnits,
+    contractValue: req.body.contractValue,
+    enterpriseDocument: req.body.enterpriseDocument,
+    bonusRate: req.body.bonusRate,
+    bonusParcels: req.body.bonusParcels,
+    bonusValue: req.body.bonusValue,
+    userBank: req.body.userBank,    
   };
   
 
@@ -224,6 +249,8 @@ app.get('/d/envelope/:envelopeId/document/:documentId', async (req, res) => {
   //     'Content-Disposition': 'inline; filename="document.pdf"',
   //     'Content-Length': results.length
   // });
+    // res.send(results);
+
     res.send(htmlContent);
     // return res.status(404).json({ message: 'Nenhum envelope foi encontrado.' });
   } catch (error) {
@@ -292,7 +319,6 @@ const sendEnvelope = async (args) => {
 function makeDocFields(docFields, templateData) {
   const labelToBodyField = {
     "Full Name": "fullName",
-    "Nationality": "nationality",
     "Civil State": "civilState",
     "RG": "rg",
     "CPF": "cpf",
@@ -304,10 +330,49 @@ function makeDocFields(docFields, templateData) {
     "Neighborhood": "neighborhood",
     "City": "city",
     "State": "state",
-    "Zip Code": "zipCode"
+    "Zip Code": "zipCode",
+    "Enterprise Name": "enterpriseName",
+    "Enterprise Address": "enterpriseAddress",
+    "Enterprise Number": "enterpriseNumber",
+    "Enterprise Neighborhood": "enterpriseNeighborhood",
+    "Enterprise City": "enterpriseCity",
+    "Enterprise Meter": "enterpriseMeter",
+    "Enterprise Units": "enterpriseUnits",
+    "Contract Value": "contractValue",
+    "Enterprise Document": "enterpriseDocument",
+    "Bonus Rate": "bonusRate",
+    "Bonus Parcels": "bonusParcels",
+    "Bonus Value": "bonusValue",
+    "User Bank": "userBank"
   };
 
+  const currentDate = new Date();
+  const currentDay = currentDate.getDate();
+  const currentYear = currentDate.getFullYear();
+  
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+  const currentMonth = monthNames[currentDate.getMonth()];
+
   return docFields.map(field => {
+      if (field.label === "Day") {
+        return {
+          ...field,
+          value: currentDay.toString()
+        };
+      } else if (field.label === "Month") {
+        return {
+          ...field,
+          value: currentMonth
+        };
+      } else if (field.label === "Year") {
+        return {
+          ...field,
+          value: currentYear.toString()
+        };
+      }
       const bodyField = labelToBodyField[field.label];
       if (bodyField && templateData[bodyField] !== undefined) {
           return {
