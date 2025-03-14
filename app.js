@@ -59,7 +59,6 @@ app.post('/d', async (req, res) => {
   };
   const templateData = {
     fullName: req.body.signerName,        
-    nationality: req.body.nationality,
     civilState: req.body.civilState,
     rg: req.body.rg,
     cpf: req.body.cpf,
@@ -71,7 +70,7 @@ app.post('/d', async (req, res) => {
     neighborhood: req.body.neighborhood,
     city: req.body.city,               
     state: req.body.state,            
-    zipCode: req.body.zipCode,
+    zipCode: req.body.zipCode,      
     enterpriseName: req.body.enterpriseName,
     enterpriseAddress: req.body.enterpriseAddress,
     enterpriseNumber: req.body.enterpriseNumber,
@@ -84,7 +83,26 @@ app.post('/d', async (req, res) => {
     bonusRate: req.body.bonusRate,
     bonusParcels: req.body.bonusParcels,
     bonusValue: req.body.bonusValue,
-    userBank: req.body.userBank,       
+    userBank: req.body.userBank,
+    enterpriseState: req.body.enterpriseState,
+    contractValueWritten: req.body.contractValueWritten,
+    capitationQuotas: req.body.capitationQuotas,
+    capitationQuotasWritten: req.body.capitationQuotasWritten,
+    enterpriseQuotas: req.body.enterpriseQuotas,
+    enterpriseQuotasWritten: req.body.enterpriseQuotasWritten,
+    enterpriseBank: req.body.enterpriseBank,
+    enterpriseBankAccount: req.body.enterpriseBankAccount,
+    bonusRateWritten: req.body.bonusRateWritten,
+    bonusParcelsWritten: req.body.bonusParcelsWritten,
+    bonusValueWritten: req.body.bonusValueWritten,
+    monthlyProfitability: req.body.monthlyProfitability,
+    monthlyProfitabilityWritten: req.body.monthlyProfitabilityWritten,
+    deadline: req.body.deadline,
+    deadlineWritten: req.body.deadlineWritten,
+    monthlyProfitabilityValue: req.body.monthlyProfitabilityValue,
+    monthlyProfitabilityValueWritten: req.body.monthlyProfitabilityValueWritten,
+    liquidTotalEarnings: req.body.liquidTotalEarnings,
+    liquidTotalEarningsWritten: req.body.liquidTotalEarningsWritten
   };
   
 
@@ -150,7 +168,26 @@ app.post('/d/html', async (req, res) => {
     bonusRate: req.body.bonusRate,
     bonusParcels: req.body.bonusParcels,
     bonusValue: req.body.bonusValue,
-    userBank: req.body.userBank,    
+    userBank: req.body.userBank,
+    enterpriseState: req.body.enterpriseState,
+    contractValueWritten: req.body.contractValueWritten,
+    capitationQuotas: req.body.capitationQuotas,
+    capitationQuotasWritten: req.body.capitationQuotasWritten,
+    enterpriseQuotas: req.body.enterpriseQuotas,
+    enterpriseQuotasWritten: req.body.enterpriseQuotasWritten,
+    enterpriseBank: req.body.enterpriseBank,
+    enterpriseBankAccount: req.body.enterpriseBankAccount,
+    bonusRateWritten: req.body.bonusRateWritten,
+    bonusParcelsWritten: req.body.bonusParcelsWritten,
+    bonusValueWritten: req.body.bonusValueWritten,
+    monthlyProfitability: req.body.monthlyProfitability,
+    monthlyProfitabilityWritten: req.body.monthlyProfitabilityWritten,
+    deadline: req.body.deadline,
+    deadlineWritten: req.body.deadlineWritten,
+    monthlyProfitabilityValue: req.body.monthlyProfitabilityValue,
+    monthlyProfitabilityValueWritten: req.body.monthlyProfitabilityValueWritten,
+    liquidTotalEarnings: req.body.liquidTotalEarnings,
+    liquidTotalEarningsWritten: req.body.liquidTotalEarningsWritten
   };
   
 
@@ -218,6 +255,7 @@ app.get('/d/:email', async (req, res) => {
       console.log(req.user.accessToken)
     }
     const { email } = req.params;
+    const { signerClientId, name } = req.query;
     if (!email) {
       return res.status(400).json({ error: 'O email precisa ser informado.' });
     }
@@ -227,16 +265,37 @@ app.get('/d/:email', async (req, res) => {
 
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     const options = {...req.query, include: 'recipients', fromDate: '2025-01-01T01:44Z'}; 
-    const results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
+    let results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
     if (results.envelopes && results.envelopes.length > 0) {
       const matchingEnvelope = results.envelopes.find(
         (envelope) =>
           envelope.recipients?.certifiedDeliveries &&
           envelope.recipients.certifiedDeliveries[0]?.email === email
       );
+      // const matchingEnvelope = results.envelopes.find(
+      //   (envelope) =>
+      //     envelope.recipients?.signers &&
+      //     envelope.recipients.signers[0]?.recipientId === "1219"
+      // );
 
       if (matchingEnvelope) {
         const { status, envelopeId } = matchingEnvelope;
+        console.log(status)
+        if (status !== 'completed') {
+          // await envelopesApi.update(ACCOUNT_ID,envelopeId, {resend_envelope: true});
+          let viewRequest = makeRecipientViewRequest({
+            signerEmail: email,
+            signerName: "Suely Lima",
+            signerClientId: "1219",
+            dsReturnUrl: dsReturnUrl,
+          });
+    ///restapi/v2.1/accounts/64b03dd2-202a-4066-a9a0-056dc0ac5776/envelopes/912cd1de-b099-4858-b7aa-2d44f6193875/views/recipient'
+        results = await envelopesApi.createRecipientView(ACCOUNT_ID, envelopeId, {
+          recipientViewRequest: viewRequest,
+        });
+        return res.json({ status, envelopeId, redirectUrl: results.url + '&locale=pt_BR' });
+
+        }
         return res.json({ status, envelopeId });
       }
     }
@@ -374,7 +433,26 @@ function makeDocFields(docFields, templateData) {
     "Bonus Rate": "bonusRate",
     "Bonus Parcels": "bonusParcels",
     "Bonus Value": "bonusValue",
-    "User Bank": "userBank"
+    "User Bank": "userBank",
+    "Enterprise State": "enterpriseState",
+    "Contract Value Written": "contractValueWritten",
+    "Capitation Quotas": "capitationQuotas",
+    "Capitation Quotas Written": "capitationQuotasWritten",
+    "Enterprise Quotas": "enterpriseQuotas",
+    "Enterprise Quotas Written": "enterpriseQuotasWritten",
+    "Enterprise Bank": "enterpriseBank",
+    "Enterprise Bank Account": "enterpriseBankAccount",
+    "Bonus Rate Written": "bonusRateWritten",
+    "Bonus Parcels Written": "bonusParcelsWritten",
+    "Bonus Value Written": "bonusValueWritten",
+    "Monthly Profitability": "monthlyProfitability",
+    "Monthly Profitability Written": "monthlyProfitabilityWritten",
+    "Deadline": "deadline",
+    "Deadline Written": "deadlineWritten",
+    "Monthly Profitability Value": "monthlyProfitabilityValue",
+    "Monthly Profitability ValueWritten": "monthlyProfitabilityValueWritten",
+    "Liquid Total Earnings": "liquidTotalEarnings",
+    "Liquid Total Earnings Written": "liquidTotalEarningsWritten"
   };
 
   const currentDate = new Date();
@@ -434,6 +512,51 @@ function makeEnvelope(args) {
 
   return env;
 }
+
+// function makeEnvelope(args) {
+//   let docPdfBytes;
+//   docPdfBytes = fs.readFileSync(args.docFile);
+//   let env = new docusign.EnvelopeDefinition();
+//   // env.templateId = TEMPLATE_ID;
+  
+//   // const role = new docusign.TemplateRole();
+//   // role.email = args.signerEmail;
+//   // role.name = args.signerName;
+//   // role.roleName = 'Client';
+//   // role.clientUserId = args.signerClientId;
+
+//   // env.templateRoles = [role];
+//   env.emailSubject = 'Please sign this document';
+//   let doc1 = new docusign.Document();
+//   let doc2 = new docusign.Document();
+//   let doc1b64 = Buffer.from(docPdfBytes).toString('base64');
+//   docPdfBytes = fs.readFileSync(args.docFile2);
+//   let doc2b64 = Buffer.from(docPdfBytes).toString('base64');
+//   doc1.documentBase64 = doc1b64;
+//   doc1.name = 'Terms of Adhesion';
+//   doc1.fileExtension = 'pdf';
+//   doc1.documentId = '1';
+//   doc2.documentBase64 = doc2b64;
+//   doc2.name = 'Privacy Policy';
+//   doc2.fileExtension = 'pdf';
+//   doc2.documentId = '2';
+//   env.documents = [doc1, doc2];
+//   env.useDisclosure = true;
+//   env.status = 'sent';
+//   let signer1 = docusign.Signer.constructFromObject({
+//     email: args.signerEmail,
+//     name: args.signerName,
+//     clientUserId: args.signerClientId,
+//     recipientId: args.signerClientId,
+//   });
+
+//   let recipients = docusign.Recipients.constructFromObject({
+//     signers: [signer1],
+//   });
+//   env.recipients = recipients;
+
+//   return env;
+// }
 
 function makeRecipientViewRequest(args) {
 
