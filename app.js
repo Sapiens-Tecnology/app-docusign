@@ -1,21 +1,18 @@
 require('dotenv/config');
+const ftp = require("basic-ftp");
 const axios = require('axios');
 const express = require('express');
 const bodyParser = require('body-parser');
 const dsConfig = require('./config/index').config;
 const cors = require('cors');
 const DsJwtAuth = require('./DSJwtAuth');
-const embedClickwrapController = require('./controllers/embedClickwrap.controller');
 const path = require('path');
 const fs = require('fs-extra');
 const docusign = require('docusign-esign');
-const api = 'eSignature';
-const signerClientId = 1000; // The id of the signer within this application.
 const demoDocsPath = path.resolve(__dirname, './demo_documents');
 const pdf1File = 'MINUTA ITAQUERA II.pdf';
 const pdf2File = 'privacy.pdf';
 const dsReturnUrl = dsConfig.appUrl + '/ds-return';
-const dsPingUrl = dsConfig.appUrl + '/'; // Url that will be pinged by the DocuSign signing via Ajax
 const os = require('os');
 const app = express();
 const TEMPLATE_ID = "e248974c-9c15-42b8-9c83-8157e16b34ba";
@@ -34,8 +31,6 @@ app.use(cors({
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 app.use((req, _res, next) => {
   req.dsAuth = new DsJwtAuth(req);
@@ -48,6 +43,21 @@ app.post('/d', async (req, res) => {
   if (!isTokenOK) {
       req.user = await req.dsAuth.getToken();
   }
+
+  const client = new ftp.Client();
+  client.ftp.verbose = true;
+  
+    await client.access({
+      host: "ftp.sapiensbank.com.br",
+      port: 21,
+      user: "u733456228.brenolg",
+      password: "2*RfQ$OwdznSs>Od",
+      secure: false
+    });
+    
+  console.log("Conectado ao servidor FTP!");
+  console.log(await client.list());
+  await client.uploadFrom("caminho/arquivo-local.txt", "nome-no-servidor.txt");
 
   const envelopeArgs = {
     signerEmail: req.body.signerEmail,
@@ -205,40 +215,32 @@ app.post('/d/html', async (req, res) => {
     const docusignUrl = results.redirectUrl; const templatePath = path.resolve(__dirname, './', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
-    // Substituir a variável
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     
-    // Criar um arquivo temporário
-    const tempFilePath = path.join(os.tmpdir(), `signing-${Date.now()}.html`);
+    const tempFilePath = path.join(os.tmpdir(), `signing-${req.body.clientUserId}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
     
-    // Configurar cabeçalhos de segurança
-    res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
-    res.setHeader('X-Frame-Options', 'ALLOWALL');
-    
-    // Enviar o arquivo temporário
-    res.sendFile(tempFilePath, (err) => {
-      if (err) {
-        console.error('Erro ao enviar arquivo:', err);
-        res.status(500).send('Erro ao processar o documento');
-      }
-      
-      // Limpar o arquivo temporário após o envio
-      fs.unlink(tempFilePath, (unlinkErr) => {
-        if (unlinkErr) console.error('Erro ao remover arquivo temporário:', unlinkErr);
-      });
+
+    const client = new ftp.Client();
+  client.ftp.verbose = true;
+  
+    await client.access({
+      host: "ftp.sapiensbank.com.br",
+      port: 21,
+      user: "u733456228.brenolg",
+      password: "2*RfQ$OwdznSs>Od",
+      secure: false
     });
-    // const htmlFilePath = path.resolve(__dirname, './', 'index.html');
-    // let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
-    // htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
-    // res.set({'Content-Type': 'text/html'});
-    // res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
-    // res.setHeader('X-Frame-Options', 'ALLOWALL');
-    // res.send(htmlContent);
-    // res.setHeader('Content-Security-Policy', "frame-ancestors * 'self'");
-    // res.setHeader('X-Frame-Options', 'ALLOWALL');
     
-    // res.render('signing', { docusignUrl });
+  console.log("Conectado ao servidor FTP!");
+  await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${req.body.clientUserId}.html`);
+
+  fs.unlinkSync(tempFilePath);
+  
+  client.close();
+  
+  res.status(201).json({message: "Arquivo criado com sucesso"})
+
   } catch (error) {
     console.log(error);
     res.status(error.response?.status || 500).json({ error: error.message, details: error.response?.data });
@@ -255,7 +257,7 @@ app.get('/d/:email', async (req, res) => {
       console.log(req.user.accessToken)
     }
     const { email } = req.params;
-    const { signerClientId, name } = req.query;
+    // const { signerClientId, name } = req.query;
     if (!email) {
       return res.status(400).json({ error: 'O email precisa ser informado.' });
     }
@@ -333,15 +335,15 @@ app.get('/d/envelope/:envelopeId/document/:documentId', async (req, res) => {
     const htmlFilePath = path.resolve(__dirname, './', 'teste1.html');
     let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
     htmlContent = htmlContent.replace('{{PDF_URL}}', pdfDataUri); 
-  //   res.set({'Content-Type': 'text/html'});
-  //      res.set({
-  //     'Content-Type': 'application/pdf',
-  //     'Content-Disposition': 'inline; filename="document.pdf"',
-  //     'Content-Length': results.length
-  // });
-    // res.send(results);
+    res.set({'Content-Type': 'text/html'});
+       res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'inline; filename="document.pdf"',
+      'Content-Length': results.length
+  });
+    res.send(results);
 
-    res.send(htmlContent);
+    // res.send(htmlContent);
     // return res.status(404).json({ message: 'Nenhum envelope foi encontrado.' });
   } catch (error) {
     console.error(error);
@@ -798,16 +800,6 @@ app.get('/docusign/documents', async (req, res) => {
       });
   }
 });
-
-
-
-app.use('/test', embedClickwrapController);
-
-// app.use(express.json());
-
-
-
-
 
 const server = (
   app.listen(PORT, () => {
