@@ -52,13 +52,6 @@
             console.log('sessionEnd', event);
             window.ReactNativeWebView.postMessage(JSON.stringify({status: "SessionEnd", data: event}));
           });
-          signing.on('recipientSignatureComplete', (event) => {
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "recipientSignatureComplete", data: event}));
-          });
-          signing.on('error', (error) => {
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "error", data: event}));
-          });
-
           // Open the signing ceremony
           $(`#main`).addClass("hide"); // JQuery to hide content
           $(`#signing-ceremony`).removeClass("hide"); // Display the container
