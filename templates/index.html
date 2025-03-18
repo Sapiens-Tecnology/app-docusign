@@ -46,9 +46,17 @@
           /** Event handlers **/
           signing.on('ready', (event) => {
             console.log('UI is rendered');
+            window.ReactNativeWebView.postMessage({status: "Ready", data: JSON.stringify(event)});
           });
           signing.on('sessionEnd', (event) => {
             console.log('sessionEnd', event);
+            window.ReactNativeWebView.postMessage({status: "SessionEnd", data: JSON.stringify(event)});
+          });
+          signing.on('recipientSignatureComplete', (event) => {
+            window.ReactNativeWebView.postMessage({status: "recipientSignatureComplete", data: JSON.stringify(event)});
+          });
+          signing.on('error', (error) => {
+            window.ReactNativeWebView.postMessage({status: "error", data: JSON.stringify(event)});
           });
 
           // Open the signing ceremony
@@ -59,6 +67,8 @@
           // Any configuration or API limits will be caught here
           console.log("### Error calling docusign.js");
           console.log(error);
+          window.ReactNativeWebView.postMessage({status: "Error", data: JSON.stringify(error)});
+
         }
       })();
     </script>
