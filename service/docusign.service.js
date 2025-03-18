@@ -278,7 +278,7 @@ module.exports = {
     return fileExists;
   },
   async generateHtml(docusignUrl, id) {
-    const templatePath = path.resolve(__dirname, '../', './temmplates', 'index.html');
+    const templatePath = path.resolve(__dirname, '../', './templates', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
@@ -286,9 +286,8 @@ module.exports = {
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
 
-    const client = this.createFtpClient();
-      
-    await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${req.body.clientUserId}.html`);
+    const client = await this.createFtpClient();
+    await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${id}.html`);
 
     fs.unlinkSync(tempFilePath);
   
