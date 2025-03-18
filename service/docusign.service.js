@@ -302,14 +302,12 @@ module.exports = {
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     const options = {include: 'recipients', fromDate: '2025-01-01T01:44Z'}; 
     let results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
-
     if (results.envelopes && results.envelopes.length > 0) {
       const matchingEnvelope = results.envelopes.find(
         (envelope) =>
           envelope.recipients?.certifiedDeliveries &&
           envelope.recipients.certifiedDeliveries[0]?.email === email
       );
-    
       if (matchingEnvelope) {
         const { status, envelopeId } = matchingEnvelope;
         if (status !== 'completed') {
@@ -342,7 +340,7 @@ module.exports = {
     const base64Data = Buffer.from(results).toString('base64');
     const pdfDataUri = `data:application/pdf;base64,${base64Data}`;
     const htmlFilePath = path.resolve(__dirname, '../', './templates', 'pdf.html');
-    const htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
+    let htmlContent = fs.readFileSync(htmlFilePath, 'utf8');
     htmlContent = htmlContent.replace('{{PDF_URL}}', pdfDataUri); 
     return htmlContent;
   }

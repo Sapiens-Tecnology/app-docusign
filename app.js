@@ -1,5 +1,5 @@
 require('dotenv/config');
-
+const errorMiddleware = require('./middleware/error.middleware');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -26,6 +26,8 @@ app.use((req, _res, next) => {
 });
 
 app.use(docusignRouter);
+
+app.use(errorMiddleware);
 
 const server = (
   app.listen(PORT, () => {

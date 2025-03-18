@@ -1,5 +1,6 @@
 module.exports = class Abstract {
   constructor (model) {
+    const now = new Date();
     this.id;
     this.instance;
     this.model = model;
@@ -17,7 +18,6 @@ module.exports = class Abstract {
   async create () {
     const data = this.clearClassToCreate();
     this.id = (await this.model.create(data)).id;
-    this.cache();
     return this;
   }
 };

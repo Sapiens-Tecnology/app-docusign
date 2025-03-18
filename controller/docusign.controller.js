@@ -1,14 +1,12 @@
 const docusignService = require("../service/docusign.service");
 
 module.exports = {
-  async create(req, res) {
+  async create(req, res, next) {
   
     const isTokenOK = req.dsAuth.checkToken(3);
     if (!isTokenOK) {
         req.user = await req.dsAuth.getToken();
     }
-  
-    
     try {
       const args = docusignService.getDocusignArgs(req.body, req.user)
       const results = await docusignService.sendEnvelope(args);
@@ -17,12 +15,12 @@ module.exports = {
       res.json(results);
     } catch (error) {
       console.log(error);
-      res.status(error.response?.status || 500).json({ error: error.message, details: error.response?.data });
+      next(error);
     }
   
   },
 
-  async createEnvelope(req, res) {
+  async createEnvelope(req, res, next) {
   
     const isTokenOK = req.dsAuth.checkToken(3);
     if (!isTokenOK) {
@@ -36,12 +34,12 @@ module.exports = {
       res.status(201).json({message: "Arquivo criado com sucesso"})
     } catch (error) {
       console.log(error);
-      res.status(error.response?.status || 500).json({ error: error.message, details: error.response?.data });
+      next(error);
     }
   
   },
 
-  async getEnvelopeStatusByEmail(req, res) {
+  async getEnvelopeStatusByEmail(req, res, next) {
     try {
       const isTokenOK = req.dsAuth.checkToken(3);
       if (!isTokenOK) {
@@ -56,13 +54,10 @@ module.exports = {
       return res.status(200).json(response);
     } catch (error) {
       console.error(error);
-      res.status(error.response?.status || 500).json({
-        error: error.message,
-        details: error.response?.data || 'An unexpected error occurred',
-      });
+      next(error);
     }
   },
-  async delete(req, res) {
+  async delete(req, res, next) {
     try {
       const { id } = req.params;
       const file = await docusignService.deleteFileFromFtp(id);
@@ -70,14 +65,11 @@ module.exports = {
       res.sendStatus(204);
     } catch (error) {
       console.error("Erro ao excluir arquivo:", error);
-      res.status(error.response?.status || 500).json({
-        error: error.message,
-        details: error.response?.data || 'An unexpected error occurred',
-      });
+      next(error);
     }
   },
 
-  async getDocumentById(req, res) {
+  async getDocumentById(req, res, next) {
     try {
       const isTokenOK = req.dsAuth.checkToken(3);
       if (!isTokenOK) {
@@ -91,10 +83,7 @@ module.exports = {
       res.status(200).send(content);
     } catch (error) {
       console.error(error);
-      res.status(error.response?.status || 500).json({
-        error: error.message,
-        details: error.response?.data || 'An unexpected error occurred',
-      });
+      next(error);
     }
   }
 }
