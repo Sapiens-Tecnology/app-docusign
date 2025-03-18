@@ -157,7 +157,7 @@ module.exports = {
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     let results = null;
   
-    let envelope = makeEnvelope(args.envelopeArgs, args.templateData);
+    let envelope = this.makeEnvelope(args.envelopeArgs, args.templateData);
   ///restapi/v2.1/accounts/{accountId}/envelopes
     results = await envelopesApi.createEnvelope(args.accountId, {
       envelopeDefinition: envelope,
@@ -166,7 +166,7 @@ module.exports = {
     let envelopeId = results.envelopeId;
     console.log(`Envelope was created. EnvelopeId ${envelopeId}`);
     const doc = await envelopesApi.getEnvelopeDocGenFormFields(args.accountId, envelopeId);
-    const docFields = makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
+    const docFields = this.makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
     let url =  `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/docGenFormFields`
     const headers = {
       "Authorization": `Bearer ${args.accessToken}`,
@@ -193,7 +193,7 @@ module.exports = {
   
     await axios.put(url, body, { headers });
   
-    let viewRequest = makeRecipientViewRequest(args.envelopeArgs);
+    let viewRequest = this.makeRecipientViewRequest(args.envelopeArgs);
     ///restapi/v2.1/accounts/64b03dd2-202a-4066-a9a0-056dc0ac5776/envelopes/912cd1de-b099-4858-b7aa-2d44f6193875/views/recipient'
     results = await envelopesApi.createRecipientView(args.accountId, envelopeId, {
       recipientViewRequest: viewRequest,
@@ -286,7 +286,7 @@ module.exports = {
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
 
-    const client = createFtpClient();
+    const client = this.createFtpClient();
       
     await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${req.body.clientUserId}.html`);
 
@@ -314,7 +314,7 @@ module.exports = {
       if (matchingEnvelope) {
         const { status, envelopeId } = matchingEnvelope;
         if (status !== 'completed') {
-          let viewRequest = makeRecipientViewRequest({
+          let viewRequest = this.makeRecipientViewRequest({
             signerEmail: email,
             signerName: name,
             signerClientId: id,
@@ -323,7 +323,7 @@ module.exports = {
           results = await envelopesApi.createRecipientView(ACCOUNT_ID, envelopeId, {
             recipientViewRequest: viewRequest,
           });
-          await deleteFileFromFtp(id)
+          await this.deleteFileFromFtp(id)
           await this.generateHtml(results.url + '&locale=pt_BR', id)
         }
         return { status, envelopeId }
