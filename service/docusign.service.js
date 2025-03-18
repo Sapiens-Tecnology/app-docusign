@@ -310,23 +310,29 @@ module.exports = {
       );
       if (matchingEnvelope) {
         const { status, envelopeId } = matchingEnvelope;
-        if (status !== 'completed') {
-          let viewRequest = this.makeRecipientViewRequest({
-            signerEmail: email,
-            signerName: name,
-            signerClientId: id,
-            dsReturnUrl: dsReturnUrl,
-          });
-          results = await envelopesApi.createRecipientView(ACCOUNT_ID, envelopeId, {
-            recipientViewRequest: viewRequest,
-          });
-          await this.deleteFileFromFtp(id)
-          await this.generateHtml(results.url + '&locale=pt_BR', id)
-        }
         return { status, envelopeId }
       }
     }
     return { status: 'unsend'  }
+  },
+
+  async recreateContract(email, name, id, envelopeId, accessToken) {
+    let dsApiClient = new docusign.ApiClient();
+    dsApiClient.setBasePath(basePath);
+    dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
+
+    let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
+    let viewRequest = this.makeRecipientViewRequest({
+      signerEmail: email,
+      signerName: name,
+      signerClientId: id,
+      dsReturnUrl: dsReturnUrl,
+    });
+    results = await envelopesApi.createRecipientView(ACCOUNT_ID, envelopeId, {
+      recipientViewRequest: viewRequest,
+    });
+    await this.deleteFileFromFtp(id)
+    await this.generateHtml(results.url + '&locale=pt_BR', id)
   },
 
   async generatePdf(envelopeId, documentId, accessToken) {

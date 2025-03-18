@@ -20,8 +20,9 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use((req, _res, next) => {
+app.use(async (req, _res, next) => {
   req.dsAuth = new DsJwtAuth(req);
+  req.user = await req.dsAuth.getToken();
   next();
 });
 

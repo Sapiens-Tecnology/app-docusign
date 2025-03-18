@@ -16,4 +16,6 @@ docusignRouter.get('/docusign/envelope/:envelopeId/document/:documentId', docusi
 
 docusignRouter.delete('/docusign/:id', docusignController.delete);
 
+docusignRouter.put('/docusign/envelope/:envelopeId', docusignController.recreateContract)
+
 module.exports = docusignRouter;
