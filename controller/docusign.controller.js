@@ -59,6 +59,9 @@ module.exports = {
     try {
       const { envelopeId } = req.params;
       const { email, name, id} = req.body
+      if (!email ||!name ||!id ||!envelopeId) {
+        return res.status(400).json({ error: 'Os parâmetros email, name, id e envelopeId são obrigatórios.' });
+      }
       await docusignService.recreateContract(email, name, id, envelopeId, req.user.accessToken);
       return res.status(201).json({message: "Arquivo recriado com sucesso"});
     } catch (error) {
