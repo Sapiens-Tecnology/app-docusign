@@ -1,12 +1,10 @@
 require('dotenv/config');
-const Logs = require('../classes/Logs.class'); 
 const ftp = require("basic-ftp");
 const axios = require('axios');
 const path = require('path');
 const dsConfig = require('../config/index').config
 const demoDocsPath = path.resolve(__dirname, '../', './demo_documents');
-const pdf1File = 'MINUTA ITAQUERA II.pdf';
-const pdf2File = 'privacy.pdf';
+const pdfFile = 'privacy.pdf';
 const dsReturnUrl = dsConfig.appUrl + '/ds-return';
 const docusign = require('docusign-esign');
 const fs = require('fs-extra');
@@ -184,7 +182,7 @@ module.exports = {
   
     url = `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
     body = {
-      documentBase64: fs.readFileSync(args.envelopeArgs.docFile2).toString('base64'),
+      documentBase64: fs.readFileSync(args.envelopeArgs.docFile).toString('base64'),
       documentId: "2",
       fileExtension: "pdf",
       name: "Privacy Policy",
@@ -207,8 +205,7 @@ module.exports = {
       signerName: body.signerName,
       signerClientId: body.clientUserId,
       dsReturnUrl: dsReturnUrl,
-      docFile: path.resolve(demoDocsPath, pdf1File),
-      docFile2: path.resolve(demoDocsPath, pdf2File),
+      docFile: path.resolve(demoDocsPath, pdfFile),
     };
     const templateData = {
       fullName: body.signerName,        
