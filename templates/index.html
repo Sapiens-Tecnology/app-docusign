@@ -52,9 +52,6 @@
             console.log('sessionEnd', event);
             window.ReactNativeWebView.postMessage({status: "SessionEnd", data: JSON.stringify(event)});
           });
-          signing.on('recipientSignatureComplete', (event) => {
-            window.ReactNativeWebView.postMessage({status: "recipientSignatureComplete", data: JSON.stringify(event)});
-          });
           signing.on('error', (error) => {
             window.ReactNativeWebView.postMessage({status: "error", data: JSON.stringify(event)});
           });
