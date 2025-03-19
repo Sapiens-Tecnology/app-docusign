@@ -279,7 +279,7 @@ module.exports = {
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
-    
+    htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
 

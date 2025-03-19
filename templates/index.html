@@ -40,7 +40,7 @@
         };
 
         try {
-          const docusign = await window.DocuSign.loadDocuSign("f4d2979d-8f93-404e-997b-241c7ed17d86");
+          const docusign = await window.DocuSign.loadDocuSign("{{CLIENT_ID}}");
           const signing = docusign.signing(signingConfiguration);
 
           /** Event handlers **/
