@@ -9,7 +9,7 @@ const dsReturnUrl = dsConfig.appUrl + '/ds-return';
 const docusign = require('docusign-esign');
 const fs = require('fs-extra');
 const os = require('os');
-const basePath = 'https://demo.docusign.net/restapi';
+const basePath = process.env.BASE_PATH;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
 
 module.exports = {
@@ -152,6 +152,7 @@ module.exports = {
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(args.basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + args.accessToken);
+    console.log(args.accessToken)
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     let results = null;
   
@@ -165,7 +166,7 @@ module.exports = {
     console.log(`Envelope was created. EnvelopeId ${envelopeId}`);
     const doc = await envelopesApi.getEnvelopeDocGenFormFields(args.accountId, envelopeId);
     const docFields = this.makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
-    let url =  `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/docGenFormFields`
+    let url =  `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/docGenFormFields`
     const headers = {
       "Authorization": `Bearer ${args.accessToken}`,
       "Content-Type": "application/json",
@@ -180,7 +181,7 @@ module.exports = {
     }
     await axios.put(url, body, { headers });
   
-    url = `https://demo.docusign.net/restapi/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
+    url = `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
     body = {
       documentBase64: fs.readFileSync(args.envelopeArgs.docFile).toString('base64'),
       documentId: "2",
@@ -274,12 +275,15 @@ module.exports = {
     client.close();
     return fileExists;
   },
-  async generateHtml(docusignUrl, id) {
+  async generateHtml(docusignUrl, id, envelopeId) {
     const templatePath = path.resolve(__dirname, '../', './templates', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
+    htmlContent = htmlContent.replace('{{API_URL}}', `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes?envelope_ids=${envelopeId}`);
+    htmlContent = htmlContent.replace('{{ACCESS_TOKEN}}', args.accessToken);
+
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
 
@@ -329,7 +333,7 @@ module.exports = {
       recipientViewRequest: viewRequest,
     });
     await this.deleteFileFromFtp(id)
-    await this.generateHtml(results.url + '&locale=pt_BR', id)
+    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId)
   },
 
   async generatePdf(envelopeId, documentId, accessToken) {
