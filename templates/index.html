@@ -23,7 +23,7 @@
         const signingUrl = "{{DOCUSIGN_URL}}"; 
         const apiUrl = "{{API_URL}}";
         const accessToken = "{{ACCESS_TOKEN}}";
-
+        let signingProcess = false;
         const signingConfiguration = {
           url: signingUrl,
           displayFormat: 'focused',
@@ -45,12 +45,11 @@
           const docusign = await window.DocuSign.loadDocuSign("f4d2979d-8f93-404e-997b-241c7ed17d86");
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
-            // Verificar se a origem é de um domínio do DocuSign
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: event.data}))
-            if (event.origin.includes('docusign')) {
-              console.log('Mensagem recebida do DocuSign:', event.data);
-              if (event.data && event.data.eventType === 'fullScreenActivityStarted') {
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: signingProcess}));
+              if (signingProcess && event.data.eventType === 'fullScreenActivityStarted') {
                 console.log('Atividade em tela cheia encerrada - possível conclusão');
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "fetch iniciado", data: signingProcess}));
+
                 const response = await fetch(apiUrl, {
                   method: 'GET',
                   headers: {
@@ -68,12 +67,12 @@
                   window.ReactNativeWebView.postMessage(JSON.stringify({status: "signing-failed", data: status}));
                 }
               }
-            }
           }, false);
 
           /** Event handlers **/
           signing.on('ready', (event) => {
             console.log('UI is rendered');
+            signingProcess = true;
             window.ReactNativeWebView.postMessage(JSON.stringify({status: "Ready", data: event}));
           });
           signing.on('sessionEnd', (event) => {
