@@ -275,14 +275,14 @@ module.exports = {
     client.close();
     return fileExists;
   },
-  async generateHtml(docusignUrl, id, envelopeId) {
+  async generateHtml(docusignUrl, id, envelopeId, accessToken) {
     const templatePath = path.resolve(__dirname, '../', './templates', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
-    htmlContent = htmlContent.replace('{{API_URL}}', `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes?envelope_ids=${envelopeId}`);
-    htmlContent = htmlContent.replace('{{ACCESS_TOKEN}}', args.accessToken);
+    htmlContent = htmlContent.replace('{{API_URL}}', `${basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes?envelope_ids=${envelopeId}`);
+    htmlContent = htmlContent.replace('{{ACCESS_TOKEN}}', accessToken);
 
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
@@ -333,7 +333,7 @@ module.exports = {
       recipientViewRequest: viewRequest,
     });
     await this.deleteFileFromFtp(id)
-    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId)
+    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId, accessToken)
   },
 
   async generatePdf(envelopeId, documentId, accessToken) {

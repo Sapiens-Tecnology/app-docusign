@@ -20,7 +20,7 @@ module.exports = {
       const args = docusignService.getDocusignArgs(req.body, req.user)
       const results = await docusignService.sendEnvelope(args);
       const docusignUrl = results.redirectUrl; 
-      await docusignService.generateHtml(docusignUrl, req.body.clientUserId, results.envelopeId)
+      await docusignService.generateHtml(docusignUrl, req.body.clientUserId, results.envelopeId, args.accessToken)
       return res.status(201).json({message: "Arquivo criado com sucesso"})
     } catch (error) {
       console.log(error);
