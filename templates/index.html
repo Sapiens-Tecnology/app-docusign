@@ -57,7 +57,11 @@
                     "Content-Type": "application/json",
                   }
                 })
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "depois do fetch"}));
+
                 const data = await response.json();
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "depois do json"}));
+
                 const status = data.status;
                 window.ReactNativeWebView.postMessage(JSON.stringify({status: "status", data: status}));
                 if (status === 'completed') { 
