@@ -46,6 +46,7 @@
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
             // Verificar se a origem é de um domínio do DocuSign
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "chegou no message"}))
             if (event.origin.includes('docusign')) {
               console.log('Mensagem recebida do DocuSign:', event.data);
               if (event.data && event.data.eventType === 'fullScreenActivityStarted') {
