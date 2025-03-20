@@ -42,7 +42,7 @@
           }
         };
         try {
-          const docusign = await window.DocuSign.loadDocuSign("f4d2979d-8f93-404e-997b-241c7ed17d86");
+          const docusign = await window.DocuSign.loadDocuSign("{{CLIENT_ID}}");
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
             window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: signingProcess}));
@@ -56,7 +56,7 @@
                     "Authorization": `Bearer ${accessToken}`,
                     "Content-Type": "application/json",
                   }
-                })
+          }).catch((e) => window.ReactNativeWebView.postMessage(JSON.stringify({status: "catch do fetch", data: e})))
             window.ReactNativeWebView.postMessage(JSON.stringify({status: "depois do fetch"}));
 
                 const data = await response.json();

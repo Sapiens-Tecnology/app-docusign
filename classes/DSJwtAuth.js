@@ -19,7 +19,7 @@ class DsJwtAuth {
         this.accountName = req.user && req.user.accountName;
         this.basePath = req.user && req.user.basePath;
         this._tokenExpiration = req.user && req.user.tokenExpirationTimestamp;
-        this.scopes = 'signature impersonation dtr.rooms.read dtr.rooms.write dtr.documents.read dtr.documents.write dtr.profile.read dtr.profile.write dtr.company.read dtr.company.write room_forms click.manage click.send organization_read group_read permission_read user_read user_write account_read domain_read identity_provider_read user_data_redact asset_group_account_read asset_group_account_clone_write asset_group_account_clone_read webforms_read webforms_instance_read webforms_instance_write aow_manage organization_sub_account_write organization_sub_account_read';
+        this.scopes = 'signature click.manage click.send impersonation';
 
         // For production use, you'd want to store the refresh token in non-volatile storage since it is
         // good for 30 days. You'd probably want to encrypt it too.
@@ -64,10 +64,10 @@ class DsJwtAuth {
         const jwtLifeSec = 10 * 60; // requested lifetime for the JWT is 10 min
         const dsApi = new docusign.ApiClient();
         dsApi.setOAuthBasePath(dsConfig.dsOauthServer.replace('https://', '')); // it should be domain only.
+        
         const results = await dsApi.requestJWTUserToken(dsConfig.dsJWTClientId,
             dsConfig.impersonatedUserGuid, this.scopes, rsaKey,
             jwtLifeSec);
-
         const expiresAt = moment().add(results.body.expires_in, 's').subtract(tokenReplaceMin, 'm');
         this.accessToken = results.body.access_token;
         this._tokenExpiration = expiresAt;

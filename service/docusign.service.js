@@ -91,7 +91,7 @@ module.exports = {
       "Deadline": "deadline",
       "Deadline Written": "deadlineWritten",
       "Monthly Profitability Value": "monthlyProfitabilityValue",
-      "Monthly Profitability ValueWritten": "monthlyProfitabilityValueWritten",
+      "Monthly Profitability Value Written": "monthlyProfitabilityValueWritten",
       "Liquid Total Earnings": "liquidTotalEarnings",
       "Liquid Total Earnings Written": "liquidTotalEarningsWritten"
     };
