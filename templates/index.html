@@ -46,10 +46,13 @@
           const docusign = await window.DocuSign.loadDocuSign(clientId);
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: signingProcess}));
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: event.data.eventType}));
               if (signingProcess && event.data.eventType === 'fullScreenActivityStarted') {
+                window.ReactNativeWebView.postMessage(JSON.stringify({status: "fetch iniciado", data: signingProcess}));
 
                 const response = await fetch(apiUrl);
-                
+                window.ReactNativeWebView.postMessage(JSON.stringify({status: "depois do fetch"}));
                 if (!response.ok) {
                   throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -57,6 +60,7 @@
                 const data = await response.json();
 
                 const status = data.status;
+                window.ReactNativeWebView.postMessage(JSON.stringify({status: "status", data: status}));
                 if (status === 'completed') { 
                   window.ReactNativeWebView.postMessage(JSON.stringify({status: "signing-completed"}));
                 } else {
