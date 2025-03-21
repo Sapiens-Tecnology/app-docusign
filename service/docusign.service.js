@@ -197,7 +197,7 @@ module.exports = {
     results = await envelopesApi.createRecipientView(args.accountId, envelopeId, {
       recipientViewRequest: viewRequest,
     });
-    return { envelopeId: envelopeId, redirectUrl: results.url + '&locale=pt_BR' };
+    return { envelopeId: envelopeId, redirectUrl: results.url + '&hasConsented=true' };
   },
 
   getDocusignArgs(body, user) {

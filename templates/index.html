@@ -29,6 +29,12 @@
           url: signingUrl,
           displayFormat: 'focused',
           autoNavigate: true,
+          skipDomainVerification: true,
+          consent: {
+            enabled: false,
+            required: false,
+            showDisclosure: false,
+          },
           style: {
             branding: {
               primaryButton: {
@@ -46,6 +52,8 @@
           const docusign = await window.DocuSign.loadDocuSign(clientId);
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: "mesage", data: event}));
+
               if (signingProcess && event.data.eventType === 'fullScreenActivityStarted') {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                   type: 'fetchRequest',
