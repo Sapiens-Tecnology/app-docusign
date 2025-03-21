@@ -11,6 +11,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const basePath = process.env.BASE_PATH;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
+const SERVER_URL = process.env.SERVER_URL;
 
 module.exports = {
   makeRecipientViewRequest(args) {
@@ -138,7 +139,7 @@ module.exports = {
     const client = new ftp.Client();
     client.ftp.verbose = true;
     await client.access({
-      host: "ftp.sapiensbank.com.br",
+      host: "srv654.hstgr.io",
       port: 21,
       user: "u733456228.brenolg",
       password: "2*RfQ$OwdznSs>Od",
@@ -281,8 +282,7 @@ module.exports = {
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
-    htmlContent = htmlContent.replace('{{API_URL}}', `${basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes?envelope_ids=${envelopeId}`);
-    htmlContent = htmlContent.replace('{{ACCESS_TOKEN}}', accessToken);
+    htmlContent = htmlContent.replace('{{API_URL}}', `${SERVER_URL}/${envelopeId}`);
 
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
@@ -316,6 +316,21 @@ module.exports = {
     }
     return { status: 'unsend'  }
   },
+
+  async getStatusByEnvelopeId(envelopeId, accessToken) {
+    let dsApiClient = new docusign.ApiClient();
+    dsApiClient.setBasePath(basePath);
+    dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
+
+    let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
+    const options = {envelopeIds: envelopeId}; 
+    let results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
+    if (results.envelopes && results.envelopes.length > 0) {
+        const { status } = results.envelopes[0];
+        return { status }
+    }
+  },
+
 
   async recreateContract(email, name, id, envelopeId, accessToken) {
     let dsApiClient = new docusign.ApiClient();

@@ -43,6 +43,19 @@ module.exports = {
       next(error);
     }
   },
+  async getEnvelopeStatusByEnvelopeId(req, res, next) {
+    try {
+      const { envelopeId } = req.params;
+      if (!envelopeId) {
+        return res.status(400).json({ error: 'O parâmetro envelopeId são obrigatórios.' });
+      }
+      const response = await docusignService.getStatusByEnvelopeId(envelopeId, req.user.accessToken)
+      return res.status(200).json(response);
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  },
   async delete(req, res, next) {
     try {
       const { id } = req.params;
