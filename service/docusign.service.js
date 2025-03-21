@@ -318,6 +318,7 @@ module.exports = {
   },
 
   async getStatusByEnvelopeId(envelopeId, accessToken) {
+    console.log('getStatusByEnvelopeId')
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -327,6 +328,7 @@ module.exports = {
     let results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
     if (results.envelopes && results.envelopes.length > 0) {
         const { status } = results.envelopes[0];
+        console.log(status)
         return { status }
     }
   },
