@@ -11,7 +11,6 @@ const fs = require('fs-extra');
 const os = require('os');
 const basePath = process.env.BASE_PATH;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
-const SERVER_URL = process.env.SERVER_URL;
 
 module.exports = {
   makeRecipientViewRequest(args) {
@@ -276,13 +275,13 @@ module.exports = {
     client.close();
     return fileExists;
   },
-  async generateHtml(docusignUrl, id, envelopeId, accessToken) {
+  async generateHtml(docusignUrl, id, envelopeId) {
     const templatePath = path.resolve(__dirname, '../', './templates', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
-    htmlContent = htmlContent.replace('{{API_URL}}', `${SERVER_URL}/${envelopeId}`);
+    htmlContent = htmlContent.replace('{{ENVELOPE_ID}}', envelopeId);
 
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
@@ -318,7 +317,6 @@ module.exports = {
   },
 
   async getStatusByEnvelopeId(envelopeId, accessToken) {
-    console.log('getStatusByEnvelopeId')
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -328,7 +326,6 @@ module.exports = {
     let results = await envelopesApi.listStatusChanges(ACCOUNT_ID, options);
     if (results.envelopes && results.envelopes.length > 0) {
         const { status } = results.envelopes[0];
-        console.log(status)
         return { status }
     }
   },
@@ -350,7 +347,7 @@ module.exports = {
       recipientViewRequest: viewRequest,
     });
     await this.deleteFileFromFtp(id)
-    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId, accessToken)
+    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId)
   },
 
   async generatePdf(envelopeId, documentId, accessToken) {

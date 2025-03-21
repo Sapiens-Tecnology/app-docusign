@@ -21,8 +21,8 @@
     <script type="module">
       (async () => {
         const signingUrl = "{{DOCUSIGN_URL}}"; 
-        const apiUrl = "{{API_URL}}";
         const clientId = "{{CLIENT_ID}}";
+        const envelopeId = "{{ENVELOPE_ID}}"
         let signingProcess = false;
 
         const signingConfiguration = {
@@ -46,26 +46,11 @@
           const docusign = await window.DocuSign.loadDocuSign(clientId);
           const signing = docusign.signing(signingConfiguration);
           window.addEventListener('message', async function(event) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: signingProcess}));
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "message", data: event.data.eventType}));
               if (signingProcess && event.data.eventType === 'fullScreenActivityStarted') {
-                window.ReactNativeWebView.postMessage(JSON.stringify({status: "fetch iniciado", data: signingProcess}));
-
-                const response = await fetch(apiUrl).catch((error) =>  window.ReactNativeWebView.postMessage(JSON.stringify({status: "catch do fetch", error})));
-                window.ReactNativeWebView.postMessage(JSON.stringify({status: "depois do fetch"}));
-                if (!response.ok) {
-                  throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                const status = data.status;
-                window.ReactNativeWebView.postMessage(JSON.stringify({status: "status", data: status}));
-                if (status === 'completed') { 
-                  window.ReactNativeWebView.postMessage(JSON.stringify({status: "signing-completed"}));
-                } else {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({status: "signing-failed"}));
-                }
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'fetchRequest',
+                  envelopeId
+                }))
               }
           }, false);
 
