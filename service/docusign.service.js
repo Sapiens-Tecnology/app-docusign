@@ -166,30 +166,32 @@ module.exports = {
     console.log(`Envelope was created. EnvelopeId ${envelopeId}`);
     const doc = await envelopesApi.getEnvelopeDocGenFormFields(args.accountId, envelopeId);
     const docFields = this.makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
-    let url =  `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/docGenFormFields`
     const headers = {
       "Authorization": `Bearer ${args.accessToken}`,
       "Content-Type": "application/json",
     };
     let body = {
-      "docGenFormFields": [
-        {
-          "docGenFormFieldList": docFields,
-          "documentId": doc.docGenFormFields[0].documentId
-        }
-      ]
+      "docGenFormFieldRequest": {
+        "docGenFormFields": [
+          {
+            "docGenFormFieldList": docFields,
+            "documentId": doc.docGenFormFields[0].documentId
+          }
+        ]
+      }
     }
-    await axios.put(url, body, { headers });
+    await envelopesApi.updateEnvelopeDocGenFormFields(args.accountId, envelopeId, body);
   
     url = `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
     body = {
       documentBase64: fs.readFileSync(args.envelopeArgs.docFile).toString('base64'),
       documentId: "2",
       fileExtension: "pdf",
+      filename: "Privacy Policy",
       name: "Privacy Policy",
       order: 2
     }
-  
+    // await envelopesApi.updateDocument(body, args.accountId, envelopeId, "2")
     await axios.put(url, body, { headers });
   
     let viewRequest = this.makeRecipientViewRequest(args.envelopeArgs);

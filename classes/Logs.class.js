@@ -24,11 +24,11 @@ module.exports = class Logs extends Abstract {
 
   static async fromError (error) {
     console.log('\x1b[35m', `\n\n🪲\t${error.response?.data || error.message}\t🪲\n\n`, '\x1b[0m');
-    // const logs = new Logs({
-    //   source: 'DOCUSIGN',
-    //   type: 'ERROR',
-    //   message: error.response?.data || error.message,
-    // });
-    // await logs.create();
+    const logs = new Logs({
+      source: 'DOCUSIGN',
+      type: 'ERROR',
+      message: error.response?.data || error.message,
+    });
+    await logs.create();
   }
 }
