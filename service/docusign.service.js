@@ -139,10 +139,10 @@ module.exports = {
     const client = new ftp.Client();
     client.ftp.verbose = true;
     await client.access({
-      host: "srv654.hstgr.io",
-      port: 21,
-      user: "u733456228.brenolg",
-      password: "2*RfQ$OwdznSs>Od",
+      host: process.env.FTP_HOST,
+      port: process.env.FTP_PORT,
+      user: process.env.FTP_USER,
+      password: process.env.FTP_PASSWORD,
       secure: false
     });
     return client;
