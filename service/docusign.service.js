@@ -43,7 +43,8 @@ module.exports = {
     env.emailSubject = 'Please sign this document';
     env.useDisclosure = true;
     env.status = 'sent';
-  
+    env.brandId= "70029a85-b0e3-4600-a5f3-8132542df187"
+
     return env;
   },
 
@@ -155,8 +156,8 @@ module.exports = {
     console.log(args.accessToken)
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     let results = null;
-  
-    let envelope = this.makeEnvelope(args.envelopeArgs, args.templateData);
+ 
+    let envelope = this.makeEnvelope(args.envelopeArgs);
   ///restapi/v2.1/accounts/{accountId}/envelopes
     results = await envelopesApi.createEnvelope(args.accountId, {
       envelopeDefinition: envelope,
@@ -199,7 +200,7 @@ module.exports = {
     results = await envelopesApi.createRecipientView(args.accountId, envelopeId, {
       recipientViewRequest: viewRequest,
     });
-    return { envelopeId: envelopeId, redirectUrl: results.url + '&hasConsented=true' };
+    return { envelopeId: envelopeId, redirectUrl: results.url};
   },
 
   getDocusignArgs(body, user) {
