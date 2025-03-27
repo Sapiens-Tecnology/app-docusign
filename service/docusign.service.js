@@ -70,6 +70,11 @@ module.exports = {
       "Enterprise City": "enterpriseCity",
       "Enterprise Meter": "enterpriseMeter",
       "Enterprise Units": "enterpriseUnits",
+      "Enterprise Units Written": "enterpriseUnitsWritten",
+      "Enterprise Unit With Meter": "enterpriseUnitWithMeters",
+      "Enterprise Unit Without Meter": "enterpriseUnitWithoutMeters",
+      "Cotization In": "cotizationIn",
+      "Cotization In Written": "cotizationInWritten",
       "Contract Value": "contractValue",
       "Enterprise Document": "enterpriseDocument",
       "Bonus Rate": "bonusRate",
@@ -78,10 +83,6 @@ module.exports = {
       "User Bank": "userBank",
       "Enterprise State": "enterpriseState",
       "Contract Value Written": "contractValueWritten",
-      "Capitation Quotas": "capitationQuotas",
-      "Capitation Quotas Written": "capitationQuotasWritten",
-      "Enterprise Quotas": "enterpriseQuotas",
-      "Enterprise Quotas Written": "enterpriseQuotasWritten",
       "Enterprise Bank": "enterpriseBank",
       "Enterprise Bank Account": "enterpriseBankAccount",
       "Bonus Rate Written": "bonusRateWritten",
@@ -232,6 +233,11 @@ module.exports = {
       enterpriseCity: body.enterpriseCity,
       enterpriseMeter: body.enterpriseMeter,
       enterpriseUnits: body.enterpriseUnits,
+      enterpriseUnitsWritten: body.enterpriseUnitsWritten,
+      enterpriseUnitWithMeters: body.enterpriseUnitWithMeters,
+      enterpriseUnitWithoutMeters: body.enterpriseUnitWithoutMeters,
+      cotizationIn: body.cotizationIn,
+      cotizationInWritten: body.cotizationInWritten,
       contractValue: body.contractValue,
       enterpriseDocument: body.enterpriseDocument,
       bonusRate: body.bonusRate,
@@ -240,10 +246,6 @@ module.exports = {
       userBank: body.userBank,
       enterpriseState: body.enterpriseState,
       contractValueWritten: body.contractValueWritten,
-      capitationQuotas: body.capitationQuotas,
-      capitationQuotasWritten: body.capitationQuotasWritten,
-      enterpriseQuotas: body.enterpriseQuotas,
-      enterpriseQuotasWritten: body.enterpriseQuotasWritten,
       enterpriseBank: body.enterpriseBank,
       enterpriseBankAccount: body.enterpriseBankAccount,
       bonusRateWritten: body.bonusRateWritten,
@@ -353,7 +355,7 @@ module.exports = {
     await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId)
   },
 
-  async generatePdf(envelopeId, documentId, accessToken) {
+  async generatern(envelopeId, documentId, accessToken) {
     const dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
