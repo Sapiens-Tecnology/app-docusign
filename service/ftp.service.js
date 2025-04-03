@@ -13,6 +13,8 @@ module.exports = {
       password: process.env.FTP_PASSWORD,
       secure: false
     });
+    console.log(await client.list())
+
     return client;
   },
   async deleteFileFromFtp(id) {

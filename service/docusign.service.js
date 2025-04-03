@@ -327,7 +327,7 @@ module.exports = {
     fs.writeFileSync(tempFilePath, htmlContent);
 
     const client = await ftpService.createFtpClient();
-    await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${id}.html`);
+    await client.uploadFrom(tempFilePath, `/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${id}.html`);
 
     fs.unlinkSync(tempFilePath);
   
