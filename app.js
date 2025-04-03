@@ -7,7 +7,6 @@ const auth = require('./middleware/auth.middleware');
 const docusignRouter = require('./router/docusign')
 const app = express();
 const PORT = process.env.PORT || 8080;
-;
 
 app.use(cors({
   origin: '*',

@@ -42,6 +42,7 @@ class DsJwtAuth {
      * @function
      */
     checkToken(bufferMin = tokenReplaceMinGet) {
+        console.log(this.accessToken)
         let noToken = !this.accessToken || !this._tokenExpiration;
         let now = moment();
         let needToken = noToken || moment(this._tokenExpiration).subtract(

@@ -23,7 +23,6 @@
         const signingUrl = "{{DOCUSIGN_URL}}"; 
         const clientId = "{{CLIENT_ID}}";
         const envelopeId = "{{ENVELOPE_ID}}"
-        let signingProcess = false;
 
         const signingConfiguration = {
           url: signingUrl,
@@ -44,20 +43,9 @@
         try {
           const docusign = await window.DocuSign.loadDocuSign(clientId);
           const signing = docusign.signing(signingConfiguration);
-          window.addEventListener('message', async function(event) {
-              if (signingProcess && event.data.eventType === 'fullScreenActivityStarted') {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'fetchRequest',
-                  envelopeId
-                }))
-              }
-          }, false);
-
           /** Event handlers **/
           signing.on('ready', (event) => {
             console.log('UI is rendered');
-            signingProcess = true;
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "Ready", data: event}));
           });
           signing.on('sessionEnd', (event) => {
             console.log('sessionEnd', event);

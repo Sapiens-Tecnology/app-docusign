@@ -1,6 +1,4 @@
 require('dotenv/config');
-const ftp = require("basic-ftp");
-const axios = require('axios');
 const path = require('path');
 const dsConfig = require('../config/index').config
 const demoDocsPath = path.resolve(__dirname, '../', './demo_documents');
@@ -11,8 +9,82 @@ const fs = require('fs-extra');
 const os = require('os');
 const basePath = process.env.BASE_PATH;
 const ACCOUNT_ID = process.env.ACCOUNT_ID;
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const libre = require("libreoffice-convert");
+const GeneralError = require('../classes/GeneralError.class');
+const ValidateFields = require('../utils/ValidateFields');
+const labelToBodyField = require('../utils/label')
+const ftpService = require('./ftp.service')
 
 module.exports = {
+  makeFields(templateData) {
+
+    const currentDate = new Date();
+    const currentDay = currentDate.getDate();
+    const currentYear = currentDate.getFullYear();
+  
+    const monthNames = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    const currentMonth = monthNames[currentDate.getMonth()];
+  
+    const result = {};
+  
+    result["Day"] = currentDay.toString();
+    result["Month"] = currentMonth;
+    result["Year"] = currentYear.toString();
+  
+    for (const [label, bodyField] of Object.entries(labelToBodyField)) {
+       
+      const value = templateData[bodyField];
+  
+      if (!value) {
+        throw new Error(`A propriedade obrigatória "${bodyField}" está ausente ou inválida.`);
+      }
+  
+      result[label] = value;
+    }
+  
+    return result;
+  },
+  convertToPdf(inputBuffer) {
+    return new Promise((resolve, reject) => {
+      libre.convert(inputBuffer, ".pdf", undefined, (err, done) => {
+        if (err) {
+          reject(new Error("Erro na conversão do LibreOffice: " + err.message));
+          return;
+        }
+        resolve(done);
+      });
+    });
+  },
+  
+  async extractTextFromDocx(docValues) {
+    try {
+      const content = fs.readFileSync(path.resolve(demoDocsPath, 'template teste.docx'), 'binary');
+      const zip = new PizZip(content);
+  
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+    doc.render(docValues);
+
+    const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+
+    const pdfBuffer = await this.convertToPdf(buffer);
+
+    const base64String = pdfBuffer.toString('base64');
+  
+    return base64String;
+  } catch (error) {
+    console.error('Erro ao renderizar o documento:', error);
+    throw new Error('Erro ao renderizar o documento:')
+  }
+},
   makeRecipientViewRequest(args) {
 
     let viewRequest = new docusign.RecipientViewRequest();
@@ -29,21 +101,38 @@ module.exports = {
     return viewRequest;
   },
 
-  makeEnvelope(args) {
+  async makeEnvelope(args) {
+    const { templateData, envelopeArgs } = args;
+    const docValues = this.makeFields(templateData)
     let env = new docusign.EnvelopeDefinition();
-    env.templateId = process.env.TEMPLATE_ID;
-    
-    const role = new docusign.TemplateRole();
-    role.email = args.signerEmail;
-    role.name = args.signerName;
-    role.roleName = 'Client';
-    role.clientUserId = args.signerClientId;
-  
-    env.templateRoles = [role];
     env.emailSubject = 'Please sign this document';
+    let doc1 = new docusign.Document();
+    let doc2 = new docusign.Document();
+    let doc1b64 = await this.extractTextFromDocx(docValues);
+    let docPdfBytes = fs.readFileSync(envelopeArgs.docFile);
+    let doc2b64 = Buffer.from(docPdfBytes).toString('base64');
+    doc1.documentBase64 = doc1b64;
+    doc1.name = 'Terms of Adhesion';
+    doc1.fileExtension = 'docx';
+    doc1.documentId = '1';
+    doc2.documentBase64 = doc2b64;
+    doc2.name = 'Privacy Policy';
+    doc2.fileExtension = 'pdf';
+    doc2.documentId = '2';
+    env.documents = [doc1, doc2];
     env.useDisclosure = true;
     env.status = 'sent';
-    env.brandId= "70029a85-b0e3-4600-a5f3-8132542df187"
+    let signer1 = docusign.Signer.constructFromObject({
+      email: envelopeArgs.signerEmail,
+      name: envelopeArgs.signerName,
+      clientUserId: envelopeArgs.signerClientId,
+      recipientId: envelopeArgs.signerClientId,
+    });
+
+    let recipients = docusign.Recipients.constructFromObject({
+      signers: [signer1],
+    });
+    env.recipients = recipients;
 
     return env;
   },
@@ -135,30 +224,16 @@ module.exports = {
         return field;
     });
   },
-
-  async createFtpClient() {
-    const client = new ftp.Client();
-    client.ftp.verbose = true;
-    await client.access({
-      host: process.env.FTP_HOST,
-      port: process.env.FTP_PORT,
-      user: process.env.FTP_USER,
-      password: process.env.FTP_PASSWORD,
-      secure: false
-    });
-    return client;
-  },
   
   async sendEnvelope(args) {
   
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(args.basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + args.accessToken);
-    console.log(args.accessToken)
     let envelopesApi = new docusign.EnvelopesApi(dsApiClient);
     let results = null;
  
-    let envelope = this.makeEnvelope(args.envelopeArgs);
+    let envelope = await this.makeEnvelope(args);
   ///restapi/v2.1/accounts/{accountId}/envelopes
     results = await envelopesApi.createEnvelope(args.accountId, {
       envelopeDefinition: envelope,
@@ -166,35 +241,6 @@ module.exports = {
   
     let envelopeId = results.envelopeId;
     console.log(`Envelope was created. EnvelopeId ${envelopeId}`);
-    const doc = await envelopesApi.getEnvelopeDocGenFormFields(args.accountId, envelopeId);
-    const docFields = this.makeDocFields(doc.docGenFormFields[0].docGenFormFieldList, args.templateData);
-    const headers = {
-      "Authorization": `Bearer ${args.accessToken}`,
-      "Content-Type": "application/json",
-    };
-    let body = {
-      "docGenFormFieldRequest": {
-        "docGenFormFields": [
-          {
-            "docGenFormFieldList": docFields,
-            "documentId": doc.docGenFormFields[0].documentId
-          }
-        ]
-      }
-    }
-    await envelopesApi.updateEnvelopeDocGenFormFields(args.accountId, envelopeId, body);
-  
-    url = `${args.basePath}/v2.1/accounts/${ACCOUNT_ID}/envelopes/${envelopeId}/documents/2`
-    body = {
-      documentBase64: fs.readFileSync(args.envelopeArgs.docFile).toString('base64'),
-      documentId: "2",
-      fileExtension: "pdf",
-      filename: "Privacy Policy",
-      name: "Privacy Policy",
-      order: 2
-    }
-    // await envelopesApi.updateDocument(body, args.accountId, envelopeId, "2")
-    await axios.put(url, body, { headers });
   
     let viewRequest = this.makeRecipientViewRequest(args.envelopeArgs);
     ///restapi/v2.1/accounts/64b03dd2-202a-4066-a9a0-056dc0ac5776/envelopes/912cd1de-b099-4858-b7aa-2d44f6193875/views/recipient'
@@ -206,19 +252,19 @@ module.exports = {
 
   getDocusignArgs(body, user) {
     const envelopeArgs = {
-      signerEmail: body.signerEmail,
-      signerName: body.signerName,
+      signerEmail: body.email,
+      signerName: body.fullName,
       signerClientId: body.clientUserId,
       dsReturnUrl: dsReturnUrl,
       docFile: path.resolve(demoDocsPath, pdfFile),
     };
     const templateData = {
-      fullName: body.signerName,        
+      fullName: body.fullName,        
       civilState: body.civilState,
       rg: body.rg,
       cpf: body.cpf,
       birthDate: body.birthDate,
-      email: body.signerEmail,              
+      email: body.email,              
       cellphone: body.cellphone,      
       street: body.street,            
       houseNumber: body.houseNumber,
@@ -270,28 +316,17 @@ module.exports = {
       templateData,
     };
   },
-  async deleteFileFromFtp(id) {
-    const client = await this.createFtpClient();
-    await client.cd("/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/");
-    
-    const fileList = await client.list();
-    const fileExists = fileList.some(file => file.name === `signing-${id}.html`);
-    if (fileExists) await client.remove(`/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${id}.html`);
-    client.close();
-    return fileExists;
-  },
-  async generateHtml(docusignUrl, id, envelopeId) {
+  async generateHtml(docusignUrl, id) {
     const templatePath = path.resolve(__dirname, '../', './templates', 'index.html');
     let htmlContent = fs.readFileSync(templatePath, 'utf8');
     
     htmlContent = htmlContent.replace('{{DOCUSIGN_URL}}', docusignUrl);
     htmlContent = htmlContent.replace('{{CLIENT_ID}}', process.env.CLIENT_ID);
-    htmlContent = htmlContent.replace('{{ENVELOPE_ID}}', envelopeId);
 
     const tempFilePath = path.join(os.tmpdir(), `signing-${id}.html`);
     fs.writeFileSync(tempFilePath, htmlContent);
 
-    const client = await this.createFtpClient();
+    const client = await ftpService.createFtpClient();
     await client.uploadFrom(tempFilePath, `/sandbox/6afa10fc-7173-4d6e-82c1-1ec4f709e721/modals-template/docusign/signing-${id}.html`);
 
     fs.unlinkSync(tempFilePath);
@@ -299,7 +334,9 @@ module.exports = {
     client.close();
   },
 
-  async getStatusByEmail(email, accessToken, name, id) {
+  async getStatusByEmail(email, accessToken) {
+    if (!email) throw new GeneralError('O parâmetro email é obrigatório.', 400);
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) throw new GeneralError('O e-mail informado é inválido. Certifique-se de que está no formato correto.', 400)
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -310,8 +347,8 @@ module.exports = {
     if (results.envelopes && results.envelopes.length > 0) {
       const matchingEnvelope = results.envelopes.find(
         (envelope) =>
-          envelope.recipients?.certifiedDeliveries &&
-          envelope.recipients.certifiedDeliveries[0]?.email === email
+          envelope.recipients?.signers &&
+          envelope.recipients.signers[0]?.email === email
       );
       if (matchingEnvelope) {
         const { status, envelopeId } = matchingEnvelope;
@@ -322,6 +359,7 @@ module.exports = {
   },
 
   async getStatusByEnvelopeId(envelopeId, accessToken) {
+    if (!envelopeId) throw new GeneralError('O id do envelope é obrigatório.', 400);
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -337,6 +375,7 @@ module.exports = {
 
 
   async recreateContract(email, name, id, envelopeId, accessToken) {
+    ValidateFields(["email", "name", "id", "envelopeId"], {email, name, id, envelopeId})
     let dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
@@ -351,11 +390,12 @@ module.exports = {
     results = await envelopesApi.createRecipientView(ACCOUNT_ID, envelopeId, {
       recipientViewRequest: viewRequest,
     });
-    await this.deleteFileFromFtp(id)
-    await this.generateHtml(results.url + '&locale=pt_BR', id, envelopeId)
+    await ftpService.deleteFileFromFtp(id)
+    await this.generateHtml(results.url + '&locale=pt_BR', id)
   },
 
-  async generatern(envelopeId, documentId, accessToken) {
+  async generatePdf(envelopeId, documentId, accessToken) {
+    ValidateFields(["documentId", "envelopeId"], {documentId, envelopeId})
     const dsApiClient = new docusign.ApiClient();
     dsApiClient.setBasePath(basePath);
     dsApiClient.addDefaultHeader('Authorization', 'Bearer ' + accessToken);
