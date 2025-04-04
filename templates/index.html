@@ -47,8 +47,8 @@
             console.log('UI is rendered');
           });
           signing.on('sessionEnd', (event) => {
-            console.log('sessionEnd', event);
-            window.ReactNativeWebView.postMessage(JSON.stringify({status: "SessionEnd", data: event}));
+            console.log('sessionEnd', event.sessionEndType);
+            window.ReactNativeWebView.postMessage(JSON.stringify({status: event.sessionEndType, data: event}));
           });
           $(`#main`).addClass("hide");
           $(`#signing-ceremony`).removeClass("hide");

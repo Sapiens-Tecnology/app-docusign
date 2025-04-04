@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:20
 
 WORKDIR /src
 
@@ -6,9 +6,9 @@ COPY package*.json ./
 
 RUN npm install
 
-# RUN apt update && apt install -y libreoffice
+RUN apt update && apt install -y libreoffice
 
-RUN apk add --no-cache libreoffice
+# RUN apk add --no-cache libreoffice
 
 COPY . .
 

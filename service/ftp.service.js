@@ -6,14 +6,15 @@ module.exports = {
     async createFtpClient() {
     const client = new ftp.Client();
     client.ftp.verbose = true;
+    console.log(process.env.FTP_PASSWORD)
     await client.access({
       host: process.env.FTP_HOST,
       port: process.env.FTP_PORT,
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
-      secure: false
+      secure: false,
+      passive: true 
     });
-    console.log(await client.list())
 
     return client;
   },
