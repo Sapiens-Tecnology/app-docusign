@@ -95,7 +95,7 @@ module.exports = {
     viewRequest.userName = args.signerName;
     viewRequest.clientUserId = args.signerClientId;
   
-    viewRequest.frameAncestors = ['http://localhost:3000', 'https://apps-d.docusign.com', 'http://localhost:5501', 'http://192.168.1.2:8081', 'http://localhost:8081', 'http://localhost:5502', 'http://localhost:8080', 'https://sapiensbank.com.br/'];
+    viewRequest.frameAncestors = ['http://localhost:3000', 'https://apps-d.docusign.com', 'http://localhost:5501', 'http://192.168.1.2:8081', 'http://localhost:8081', 'http://localhost:5502', 'http://localhost:8080', 'http://sandbox.sapiensbank.com.br/'];
     viewRequest.messageOrigins = ['https://apps-d.docusign.com'];
   
     return viewRequest;
